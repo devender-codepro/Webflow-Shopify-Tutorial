@@ -1,6 +1,7 @@
 const storefrontAccessToken = '4c051888ca0ea8028f4f262475c478f8';
 const shopifyStorefrontApiUrl = 'https://activescroll.myshopify.com/api/graphql';
 
+// GET PRODUCT DATA
 const query = `
 query SingleProduct($handle:String!){
     productByHandle(handle:$handle){
@@ -38,7 +39,7 @@ query SingleProduct($handle:String!){
   }
 `;
 const variables = {
-    handle: "self-portrait"
+    handle: "landscape"
   };
 fetch(shopifyStorefrontApiUrl, {
   method: 'POST',
@@ -112,15 +113,7 @@ function productRender(data){
   })
 
 
-
-/*
-
-
-selectedOptions =['Black','XXL']
-
-
-*/
-
+  // Working Radio Buttons
 
 
   document.querySelectorAll(".variant-options input[type='radio']").forEach(radio=>{
@@ -142,121 +135,342 @@ selectedOptions =['Black','XXL']
       });
   
       if (matchingVariant) {
-        console.log("Matching variant found:", matchingVariant);
-      } else {
-        console.log("No matching variant found for:", mainSelectedTitle);
-      }
+        let variantShopifyID = matchingVariant.id;
+        let variantID = variantShopifyID.match(/\d+$/)[0];
+        let addToCartButton = document.querySelector(".shopify-atc-button button");
+        addToCartButton.setAttribute("variant-id",variantID)      }
 
-
+      
      
     })
   })
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//       let matchedVariant = null;
-// matchedVariant = productData.variants.edges.find(variant => { // for all variants, runs a callback function
-//     for (let i = 0; i < selectedOptions.length; i++) {
-//         if (variant.node.title.indexOf(selectedOptions[i]) === -1) {
-//             return false;
-//         }
-//     }
-
-//     return true;
-    
-// });
-
-
-
-
-
-
-
-  // Product Variants
-//   let variantContainer = document.querySelector('.variant-options');
-//   let variants = data[0].variants.edges;
-//   variants.forEach((variant,index)=>{
-//     let variantTitle = variant.node.title;
-//     let variantShopifyID = variant.node.id;
-//     let variantID = variantShopifyID.match(/\d+$/)[0]
-    
-//     let radioButton = document.createElement('input');
-//     radioButton.setAttribute('type', 'radio');
-//     radioButton.setAttribute('name', 'variant');
-//     radioButton.setAttribute('id', variantID);
-
-
-//     if (index === 0) {
-//       radioButton.setAttribute('checked', true);
-//   }
-//     // Create label element
-//     let label = document.createElement('label');
-//     label.setAttribute('for', variantID);
-//     label.textContent = variantTitle;
-
-//     variantContainer.appendChild(radioButton);
-//     variantContainer.appendChild(label);
-
-
-//     radioButton.addEventListener("change",(e)=>{
-//       let VariantID__ATC = e.target.id;
-//       addToCartButton.setAttribute('id', VariantID__ATC);
-//       addToCartButton.setAttribute('title', variantTitle);
-//     })
-
-//   })
-
-
-//   // Shopify Add to Cart Button
-// // https://activescroll.myshopify.com/cart/41283004530839:4,41283004563607:1
-
-// let addToCartButton = document.querySelector(".shopify-atc-button button");
-// let cartDrawer = document.querySelector(".cart-drawer");
-// let closeCartButton = document.querySelector(".close-cart");
-// let checkoutButton = document.querySelector(".checkout-button");
-// let cartVariantIDs = [];
-// addToCartButton.addEventListener("click",()=>{
-
-//   let cartDrawerVariantTitle = addToCartButton.getAttribute("title");
-//   let cartDrawerVariantID = addToCartButton.getAttribute("id");
-
-
-//   cartVariantIDs.push(cartDrawerVariantID + ':1');
-
-  
-//   let cartItemDiv = document.createElement("div");
-//   let cartItemID = document.createElement("p");
-//   let cartItemTitle = document.createElement("p");
-//   let checkoutURL = 'https://activescroll.myshopify.com/cart';
-//   cartItemID.innerText = cartDrawerVariantID;
-//   cartItemTitle.innerText = cartDrawerVariantTitle;
-//   cartItemDiv.appendChild(cartItemID);
-//   cartItemDiv.appendChild(cartItemTitle);
-//   cartDrawer.appendChild(cartItemDiv);
-//   checkoutButton.href=`${checkoutURL}/${cartVariantIDs.join(',')}`
-//   cartDrawer.classList.add("active");
-// });
-
-
-// closeCartButton.addEventListener("click",()=>{
-//   cartDrawer.classList.remove("active");
-// });
-
-
-
-
 }
+
+
+
+// CART CREATION
+
+const queryCreate = `
+mutation createCart($cartInput: CartInput) {
+  cartCreate(input: $cartInput) {
+    cart {
+      id
+      createdAt
+      updatedAt
+      checkoutUrl
+      lines(first: 100) {
+        edges {
+          node {
+            id
+            quantity
+            merchandise {
+              ... on ProductVariant {
+                id
+                title
+                image{
+                  url
+                }
+              }
+            }
+          }
+        }
+      }
+      attributes {
+        key
+        value
+      }
+      cost {
+        totalAmount {
+          amount
+          currencyCode
+        }
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+        totalTaxAmount {
+          amount
+          currencyCode
+        }
+        totalDutyAmount {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+}
+
+
+`;
+const variablesCart = {
+  "cartInput": {
+    "lines": [],
+    "attributes": {
+      "key": "cart_attribute_key",
+      "value": "This is a cart attribute value"
+    }
+  }
+  };
+
+
+
+
+// CART READING
+
+let cartID;
+const queryCart = `
+query cartQuery($cartId: ID!) {
+  cart(id: $cartId) {
+    id
+    createdAt
+    updatedAt
+    checkoutUrl
+    lines(first: 10) {
+      edges {
+        node {
+          id
+          quantity
+          merchandise {
+            ... on ProductVariant {
+              id
+              title
+              image{
+                url
+              }
+            }
+          }
+          attributes {
+            key
+            value
+          }
+        }
+      }
+    }
+    attributes {
+      key
+      value
+    }
+    cost {
+      totalAmount {
+        amount
+        currencyCode
+      }
+      subtotalAmount {
+        amount
+        currencyCode
+      }
+      totalTaxAmount {
+        amount
+        currencyCode
+      }
+      totalDutyAmount {
+        amount
+        currencyCode
+      }
+    }
+  
+  }
+}
+
+`;
+const variablesReadCart = {
+  "cartId": cartID
+};
+
+
+// CART DELETE ITEM
+
+const deleteQuery = `
+mutation removeCartLines($cartId: ID!, $lineIds: [ID!]!) {
+  cartLinesRemove(cartId: $cartId, lineIds: $lineIds) {
+    cart {
+      id
+      lines(first: 10){
+        edges
+        {
+          node{
+            quantity
+            merchandise{
+              ... on ProductVariant {
+                id
+              }
+            }
+          }
+        }
+      }
+      cost {
+        totalAmount {
+          amount
+          currencyCode
+        }
+        subtotalAmount {
+          amount
+          currencyCode
+        }
+        totalTaxAmount {
+          amount
+          currencyCode
+        }
+        totalDutyAmount {
+          amount
+          currencyCode
+        }
+      }
+    }
+    
+    userErrors {
+      field
+      message
+    }
+  }
+}
+
+
+`
+
+const deleteItemVariables = 
+{
+  "cartId": "",
+  "lineIds": []
+}
+
+function createCart(queryCreate,variablesCart){
+  fetch(shopifyStorefrontApiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': storefrontAccessToken
+    },
+    body: JSON.stringify({ query: queryCreate, variables: variablesCart })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('CREATE CART', data);
+    variablesReadCart["cartId"] = data.data.cartCreate.cart.id
+    console.log(variablesReadCart);
+    readCart(queryCart, variablesReadCart);
+
+    let cartDrawer = document.querySelector(".cart-drawer");
+    cartDrawer.classList.add("active");
+  })
+  .catch(error => {
+    console.error('Error fetching data from Shopify:', error);
+  });
+}
+
+
+function readCart(queryCart,variablesReadCart){
+  fetch(shopifyStorefrontApiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': storefrontAccessToken
+    },
+    body: JSON.stringify({ query: queryCart, variables: variablesReadCart })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('READ CART',data)
+   
+    let cartItems = data.data.cart.lines.edges;
+    let itemsContainer = document.querySelector(".cart-items");
+    let checkoutButton = document.querySelector(".checkout-button");
+    itemsContainer.innerHTML = ''
+    cartItems.forEach(item=>{
+      console.log(item);
+      let itemContainer = document.createElement("li");
+      let itemTitleElement = document.createElement("h3");
+      let itemImageElement = document.createElement("img");
+      let removeElement = document.createElement("button");
+      itemTitleElement.innerText = item.node.merchandise.title;
+      itemImageElement.src = item.node.merchandise.image.url;
+      removeElement.innerText = "Remove";
+      removeElement.setAttribute("data-cartLineID",item.node.id);
+      removeElement.setAttribute("data-cartID",data.data.cart.id);
+      itemContainer.appendChild(itemTitleElement);
+      itemContainer.appendChild(itemImageElement);
+      itemContainer.appendChild(removeElement);
+
+      itemsContainer.appendChild(itemContainer);
+
+      checkoutButton.href=data.data.cart.checkoutUrl;
+    })
+  })
+  .catch(error => {
+    console.error('Error fetching data from Shopify:', error);
+  });
+}
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelector(".shopify-atc-button button").addEventListener('click',()=>{
+    let variantID = document.querySelector(".shopify-atc-button button").getAttribute("variant-id");
+    let newLineItem = {
+      "quantity": 1,
+      "merchandiseId": `gid://shopify/ProductVariant/${variantID}`
+    };
+    variablesCart.cartInput.lines.push(newLineItem);
+    console.log(variablesCart);
+    createCart(queryCreate,variablesCart);
+  })
+  
+});
+
+// Remove Item
+
+function removeItem(deleteQuery,deleteItemVariables){
+  fetch(shopifyStorefrontApiUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Shopify-Storefront-Access-Token': storefrontAccessToken
+    },
+    body: JSON.stringify({ query: deleteQuery, variables: deleteItemVariables })
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response.json();
+  })
+  .then(data => {
+    console.log('REMOVED CART', data);
+  })
+  .catch(error => {
+    console.error('Error fetching data from Shopify:', error);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+
+  document.addEventListener('click', (event) => {
+    if (event.target.matches('.cart-items li button')) {
+      deleteItemVariables["cartId"] = event.target.dataset.cartid;
+      deleteItemVariables["lineIds"].push(event.target.dataset.cartlineid);      console.log(deleteItemVariables)
+      removeItem(deleteQuery,deleteItemVariables);
+    }
+  });
+})
+
+
+// close the drawer
+document.addEventListener("DOMContentLoaded", () => {
+
+  document.querySelector(".close-cart").addEventListener("click",()=>{
+    let cartDrawer = document.querySelector(".cart-drawer");
+      cartDrawer.classList.remove("active");
+  })
+})
