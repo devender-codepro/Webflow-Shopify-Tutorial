@@ -296,6 +296,10 @@ mutation removeCartLines($cartId: ID!, $lineIds: [ID!]!) {
             merchandise{
               ... on ProductVariant {
                 id
+                title
+                image{
+                  url
+                }
               }
             }
           }
@@ -448,6 +452,26 @@ function removeItem(deleteQuery,deleteItemVariables){
   })
   .then(data => {
     console.log('REMOVED CART', data);
+
+    let cartItems = data.data.cartLinesRemove.cart.lines.edges;
+    console.log(cartItems);
+    let itemsContainer = document.querySelector(".cart-items");
+    let checkoutButton = document.querySelector(".checkout-button");
+    itemsContainer.innerHTML = ''
+    cartItems.forEach(item=>{
+      console.log(item);
+      let itemContainer = document.createElement("li");
+      let itemTitleElement = document.createElement("h3");
+      let itemImageElement = document.createElement("img");
+      itemTitleElement.innerText = item.node.merchandise.title;
+      itemImageElement.src = item.node.merchandise.image.url;
+      itemContainer.appendChild(itemTitleElement);
+      itemContainer.appendChild(itemImageElement);
+
+      itemsContainer.appendChild(itemContainer);
+
+      checkoutButton.href=data.data.cart.checkoutUrl;
+    })
   })
   .catch(error => {
     console.error('Error fetching data from Shopify:', error);
