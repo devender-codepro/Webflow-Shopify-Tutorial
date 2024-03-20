@@ -72,8 +72,11 @@ function productRender(data){
   let imageContainer = document.querySelector(".images");
   images.forEach(image =>{
     let imgElement = document.createElement('img'); 
+    let splide__slide = document.createElement("li");
+    splide__slide.classList.add("splide__slide")
     imgElement.src = image.node.transformedSrc; 
-    imageContainer.appendChild(imgElement);  
+    splide__slide.appendChild(imgElement)
+    imageContainer.appendChild(splide__slide);  
   })
 
   // Product Title
