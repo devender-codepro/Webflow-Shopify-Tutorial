@@ -78,10 +78,15 @@ function productRender(data){
 
   // Product Title
   let titleContainer = document.querySelector(".product-title");
+  let descriptionContainer = document.querySelector(".product-description");
   let title = data[0].title;
+  let description = data[0].description;
   let titleElement = document.createElement("h2");
+  let descriptionElement = document.createElement("p");
+  descriptionElement.innerText = description;
   titleElement.innerText = title;
   titleContainer.appendChild(titleElement);
+  descriptionContainer.appendChild(descriptionElement);
 
 
   // Product Variants
