@@ -1,5 +1,5 @@
-const storefrontAccessToken = '4c051888ca0ea8028f4f262475c478f8';
-const shopifyStorefrontApiUrl = 'https://activescroll.myshopify.com/api/graphql';
+const storefrontAccessToken = 'f14b81b61d137035845e05174cdbb527';
+const shopifyStorefrontApiUrl = 'https://devender-dev-next.myshopify.com/api/graphql';
 
 // GET PRODUCT DATA
 const query = `
@@ -39,7 +39,7 @@ query SingleProduct($handle:String!){
   }
 `;
 const variables = {
-    handle: "landscape"
+    handle: "plan-for-the-best"
   };
 fetch(shopifyStorefrontApiUrl, {
   method: 'POST',
@@ -452,26 +452,13 @@ function removeItem(deleteQuery,deleteItemVariables){
   })
   .then(data => {
     console.log('REMOVED CART', data);
-
-    let cartItems = data.data.cartLinesRemove.cart.lines.edges;
-    console.log(cartItems);
-    let itemsContainer = document.querySelector(".cart-items");
-    let checkoutButton = document.querySelector(".checkout-button");
-    itemsContainer.innerHTML = ''
-    cartItems.forEach(item=>{
-      console.log(item);
-      let itemContainer = document.createElement("li");
-      let itemTitleElement = document.createElement("h3");
-      let itemImageElement = document.createElement("img");
-      itemTitleElement.innerText = item.node.merchandise.title;
-      itemImageElement.src = item.node.merchandise.image.url;
-      itemContainer.appendChild(itemTitleElement);
-      itemContainer.appendChild(itemImageElement);
-
-      itemsContainer.appendChild(itemContainer);
-
-      checkoutButton.href=data.data.cart.checkoutUrl;
+    let remainingCartItems = data.data.cartLinesRemove.cart.lines.edges;
+    remainingCartItems.forEach(item=>{
+      variablesCart.cartInput.lines.push({quantity:1,merchandiseId:item.node.merchandise.id});
     })
+    console.log(variablesCart)
+    createCart(queryCreate,variablesCart);
+
   })
   .catch(error => {
     console.error('Error fetching data from Shopify:', error);
@@ -485,6 +472,8 @@ document.addEventListener("DOMContentLoaded", () => {
       deleteItemVariables["cartId"] = event.target.dataset.cartid;
       deleteItemVariables["lineIds"].push(event.target.dataset.cartlineid);      console.log(deleteItemVariables)
       removeItem(deleteQuery,deleteItemVariables);
+      variablesCart.cartInput.lines = [];
+      console.log(variablesCart)
     }
   });
 })
