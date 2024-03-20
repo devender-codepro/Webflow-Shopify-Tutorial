@@ -137,7 +137,7 @@ function productRender(data){
       if (matchingVariant) {
         let variantShopifyID = matchingVariant.id;
         let variantID = variantShopifyID.match(/\d+$/)[0];
-        let addToCartButton = document.querySelector(".shopify-atc-button button");
+        let addToCartButton = document.querySelector(".shopify-atc-button .button");
         addToCartButton.setAttribute("variant-id",variantID)      }
 
       
@@ -420,8 +420,8 @@ function readCart(queryCart,variablesReadCart){
 
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelector(".shopify-atc-button button").addEventListener('click',()=>{
-    let variantID = document.querySelector(".shopify-atc-button button").getAttribute("variant-id");
+  document.querySelector(".shopify-atc-button .button").addEventListener('click',()=>{
+    let variantID = document.querySelector(".shopify-atc-button .button").getAttribute("variant-id");
     let newLineItem = {
       "quantity": 1,
       "merchandiseId": `gid://shopify/ProductVariant/${variantID}`
