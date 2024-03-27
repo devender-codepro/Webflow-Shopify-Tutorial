@@ -457,6 +457,7 @@ function readCart(queryCart,variablesReadCart){
     let countItems;
     itemsContainer.innerHTML = '';
     let checkoutButton = document.querySelector(".checkout-container a");
+    checkoutButton.innerHTML = `🔒 continue to checkout - $${parseInt(data.data.cart.cost.totalAmount.amount)}`
     cartItems.forEach(item=>{
 
       countItems = cartItems.length;
@@ -472,7 +473,7 @@ function readCart(queryCart,variablesReadCart){
       <div class="main-title-variant">
       <div class="main-title-price">
       <h2 class="main-product-title">Deodrant</h2>
-      <p style="margin-bottom:0">$${item.node.merchandise.price.amount}</p>
+      <p style="margin-bottom:0">$${parseInt(item.node.merchandise.price.amount)}</p>
       </div>
       <h3 class="main-variant-title"><span></span>${item.node.merchandise.title}</h3>
       <div class="qty-box">
