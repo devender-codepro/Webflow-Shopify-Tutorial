@@ -1,12 +1,12 @@
 const storefrontAccessToken = 'f14b81b61d137035845e05174cdbb527';
 const shopifyStorefrontApiUrl = 'https://devender-dev-next.myshopify.com/api/graphql';
-
+const firstValueVariantID = 43137664975077;
 // GET PRODUCT DATA
 const query = `
 query SingleProduct($handle:String!){
     productByHandle(handle:$handle){
       title
-      description
+      descriptionHtml
       priceRange{
         minVariantPrice{
           amount
@@ -31,6 +31,9 @@ query SingleProduct($handle:String!){
             title
             image{
               url
+            }
+            price{
+              amount
             }
           }
         }
@@ -67,26 +70,27 @@ fetch(shopifyStorefrontApiUrl, {
 
 function productRender(data){
 
-  // Images
-  let images = data[0].images.edges;
-  let imageContainer = document.querySelector(".images");
-  images.forEach(image =>{
-    let imgElement = document.createElement('img'); 
-    let splide__slide = document.createElement("li");
-    splide__slide.classList.add("splide__slide")
-    imgElement.src = image.node.transformedSrc; 
-    splide__slide.appendChild(imgElement)
-    imageContainer.appendChild(splide__slide);  
-  })
+  // // Images
+  // let images = data[0].images.edges;
+  // let imageContainer = document.querySelector(".images");
+  // images.forEach(image =>{
+  //   let imgElement = document.createElement('img'); 
+  //   let splide__slide = document.createElement("li");
+  //   splide__slide.classList.add("splide__slide")
+  //   imgElement.src = image.node.transformedSrc; 
+  //   splide__slide.appendChild(imgElement)
+  //   imageContainer.appendChild(splide__slide);  
+  // })
 
   // Product Title
   let titleContainer = document.querySelector(".product-title");
   let descriptionContainer = document.querySelector(".product-description");
   let title = data[0].title;
-  let description = data[0].description;
+  let description = data[0].descriptionHtml;
+  console.log(description)
   let titleElement = document.createElement("h2");
   let descriptionElement = document.createElement("p");
-  descriptionElement.innerText = description;
+  descriptionElement.innerHTML = description;
   titleElement.innerText = title;
   titleContainer.appendChild(titleElement);
   descriptionContainer.appendChild(descriptionElement);
@@ -100,24 +104,63 @@ function productRender(data){
     let optionContainer = document.querySelector(".variant-options");
     let optionNameElement = document.createElement("h3");
     let optionValues = options.values;
+    let optionDiv = document.createElement("div");
+    let classNameOption = options.name
+    let sanitizedClassName = classNameOption.match(/[a-zA-Z0-9-]+/g).join('-');
+    optionDiv.classList.add(`${sanitizedClassName}`)
     optionNameElement.innerText = options.name;
     optionContainer.appendChild(optionNameElement);
 
     optionValues.forEach(value=>{
+
+      
+
       let inputElement = document.createElement('input');
       inputElement.setAttribute('type', 'radio');
       inputElement.setAttribute('name', `variant-${options.name}`);
       inputElement.setAttribute('id', value);
       inputElement.setAttribute('value', value);
+      
 
       let label = document.createElement('label');
       label.setAttribute('for',value);
       label.textContent = value;
 
       inputElement.innerText = value;
-      optionContainer.appendChild(inputElement);
-      optionContainer.appendChild(label);
+      optionDiv.appendChild(inputElement);
+      optionDiv.appendChild(label);
+
+      productData.variants.edges.forEach(edge => {
+        console.log(edge)
+        // Check if the title matches
+        if (edge.node.title.includes(value)) {
+          label.setAttribute('img',edge.node.image.url);   
+          label.setAttribute('variant-price',edge.node.price.amount);
+          inputElement.setAttribute('variant-price',edge.node.price.amount);
+        }
+    });
+
+    
+      label.textContent = '';
+      let labelBackGroundImage = label.getAttribute("img");
+      label.innerHTML = `<img style="height:64px;width:64px;border-radius:100%" src="${labelBackGroundImage}"/><p>${value}</p>`;
+    
+    inputElement.style.display="none"
+
+      optionContainer.appendChild(optionDiv);
+      // Trigger change event to select the first variant by default
+// Trigger change event to select the first variant by default
+let firstVariant = options.values[0];
+let radio = document.getElementById(firstVariant);
+if (radio) {
+    radio.checked = true;
+    radio.dispatchEvent(new Event('change'));
+    radio.setAttribute("checked","true")
+}
     })
+    let addToCartButton = document.querySelector(".shopify-atc-button .button");
+    addToCartButton.setAttribute("variant-id",firstValueVariantID)
+
   })
 
 
@@ -125,8 +168,13 @@ function productRender(data){
 
 
   document.querySelectorAll(".variant-options input[type='radio']").forEach(radio=>{
-    radio.addEventListener("change",()=>{
+    radio.addEventListener("change",(event)=>{
       
+      let variantPrice = event.target.getAttribute('variant-price');
+      variantPrice = parseInt(variantPrice);
+      let addToCartButton = document.querySelector(".shopify-atc-button .button");
+      addToCartButton.innerHTML = `ADD TO CART - $ ${variantPrice}`;
+
       let selectedOptions = [];
       document.querySelectorAll(".variant-options input[type='radio']:checked").forEach(radio=>{
         selectedOptions.push(radio.value);
@@ -248,6 +296,9 @@ query cartQuery($cartId: ID!) {
               image{
                 url
               }
+              price{
+                amount
+              }
             }
           }
           attributes {
@@ -349,6 +400,9 @@ const deleteItemVariables =
   "lineIds": []
 }
 
+
+
+
 function createCart(queryCreate,variablesCart){
   fetch(shopifyStorefrontApiUrl, {
     method: 'POST',
@@ -399,26 +453,56 @@ function readCart(queryCart,variablesReadCart){
    
     let cartItems = data.data.cart.lines.edges;
     let itemsContainer = document.querySelector(".cart-items");
-    let checkoutButton = document.querySelector(".checkout-button");
-    itemsContainer.innerHTML = ''
+    let countContainer = document.querySelector(".count-image-flex p");
+    let countItems;
+    itemsContainer.innerHTML = '';
+    let checkoutButton = document.querySelector(".checkout-container a");
     cartItems.forEach(item=>{
+
+      countItems = cartItems.length;
+      console.log(cartItems)
+      countContainer.innerHTML = `Your bag (${countItems})`
       console.log(item);
       let itemContainer = document.createElement("li");
-      let itemTitleElement = document.createElement("h3");
-      let itemImageElement = document.createElement("img");
-      let removeElement = document.createElement("button");
-      itemTitleElement.innerText = item.node.merchandise.title;
-      itemImageElement.src = item.node.merchandise.image.url;
-      removeElement.innerText = "Remove";
+      
+      itemContainer.innerHTML = `<div class="item-container">
+      
+      <div class="image"><img src="${item.node.merchandise.image.url}"/></div>
+      <div class="qty-box-content">
+      <div class="main-title-variant">
+      <div class="main-title-price">
+      <h2 class="main-product-title">Deodrant</h2>
+      <p style="margin-bottom:0">$${item.node.merchandise.price.amount}</p>
+      </div>
+      <h3 class="main-variant-title"><span></span>${item.node.merchandise.title}</h3>
+      <div class="qty-box">
+      <div class="quantity">
+      <div class="quantity-container">
+    <button class="quantity-button" onclick="decreaseValue()">-</button>
+    <input type="number" class="quantity-input" id="quantity" value="1">
+    <button class="quantity-button" onclick="increaseValue()">+</button>
+</div>
+      </div>
+      <div class="subscribe-save-button">
+      <button>
+      SUBSCRIBE & SAVE 10%
+      </button>
+      </div>
+      </div>
+      <button class="remove-element">REMOVE</button>
+
+      </div>
+      
+      </div>
+      
+      </div>`;
+      itemsContainer.appendChild(itemContainer);
+      checkoutButton.href=data.data.cart.checkoutUrl;
+      let removeElement = document.querySelector(".remove-element")
       removeElement.setAttribute("data-cartLineID",item.node.id);
       removeElement.setAttribute("data-cartID",data.data.cart.id);
-      itemContainer.appendChild(itemTitleElement);
-      itemContainer.appendChild(itemImageElement);
-      itemContainer.appendChild(removeElement);
-
-      itemsContainer.appendChild(itemContainer);
-
-      checkoutButton.href=data.data.cart.checkoutUrl;
+      
+      
     })
   })
   .catch(error => {
